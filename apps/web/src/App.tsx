@@ -1,122 +1,93 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
+import { useState, type ReactNode } from 'react'
+import { BrowserRouter, Link, Route, Routes } from 'react-router'
+import { createQueryClient } from './api/queries'
+import { AuthProvider } from './auth/AuthProvider'
+import { RedirectIfAuthenticated, RequireAuth } from './auth/guards'
+import { AppLayout, AuthLayout } from './components/Layout'
+import { EmptyState } from './components/ui'
+import { AccountPage } from './pages/AccountPage'
+import { CapsuleDetailPage } from './pages/capsule/CapsuleDetailPage'
+import { CapsuleListPage } from './pages/capsule/CapsuleListPage'
+import { NewCapsulePage } from './pages/capsule/NewCapsulePage'
+import { DashboardPage } from './pages/DashboardPage'
+import { LoginPage } from './pages/LoginPage'
+import { EditMemoryPage } from './pages/memory/EditMemoryPage'
+import { MemoryDetailPage } from './pages/memory/MemoryDetailPage'
+import { NewMemoryPage } from './pages/memory/NewMemoryPage'
+import { NewProfilePage } from './pages/NewProfilePage'
+import { ProfilePage } from './pages/profile/ProfilePage'
+import { RegisterPage } from './pages/RegisterPage'
+import { MembersPage } from './pages/relationship/MembersPage'
+import { RelationshipLayout } from './pages/relationship/RelationshipLayout'
+import { SettingsPage } from './pages/relationship/SettingsPage'
+import { TimelinePage } from './pages/relationship/TimelinePage'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function NotFound() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <EmptyState title="Page not found">
+      <Link to="/">Back to my relationships</Link>
+    </EmptyState>
   )
 }
 
-export default App
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route
+        element={
+          <RedirectIfAuthenticated>
+            <AuthLayout />
+          </RedirectIfAuthenticated>
+        }
+      >
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
+      <Route
+        element={
+          <RequireAuth>
+            <AppLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="profiles/new" element={<NewProfilePage />} />
+        <Route path="profiles/:profileId" element={<ProfilePage />} />
+        <Route path="relationships/:relationshipId" element={<RelationshipLayout />}>
+          <Route index element={<TimelinePage />} />
+          <Route path="memories/new" element={<NewMemoryPage />} />
+          <Route path="capsules" element={<CapsuleListPage />} />
+          <Route path="capsules/new" element={<NewCapsulePage />} />
+          <Route path="members" element={<MembersPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+        <Route path="memories/:memoryId" element={<MemoryDetailPage />} />
+        <Route path="memories/:memoryId/edit" element={<EditMemoryPage />} />
+        <Route path="capsules/:capsuleId" element={<CapsuleDetailPage />} />
+        <Route path="account" element={<AccountPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Routes>
+  )
+}
+
+/** Providers shared by the app and the tests (which pass their own router and client). */
+export function AppProviders({ client, children }: { client: QueryClient; children: ReactNode }) {
+  return (
+    <QueryClientProvider client={client}>
+      <AuthProvider>{children}</AuthProvider>
+    </QueryClientProvider>
+  )
+}
+
+export default function App() {
+  const [client] = useState(createQueryClient)
+  return (
+    <BrowserRouter>
+      <AppProviders client={client}>
+        <AppRoutes />
+      </AppProviders>
+    </BrowserRouter>
+  )
+}
