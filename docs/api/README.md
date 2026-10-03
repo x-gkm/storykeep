@@ -7,6 +7,7 @@ Base URL: `http://127.0.0.1:3000/api` in development. All bodies are JSON (`Cont
 | Registration, login, sessions, current user | [auth-users.md](auth-users.md) |
 | Profiles, relationships, members | [profiles-relationships.md](profiles-relationships.md) |
 | Memories, timeline, tags | [memories.md](memories.md) |
+| Media uploads and downloads (memories, time capsules) | [media.md](media.md) |
 | Child development records, measurements, chart series | [development.md](development.md) |
 | Time capsules | [capsules.md](capsules.md) |
 
@@ -39,7 +40,7 @@ Every error has the same shape:
 | 404 | `not_found` | Doesn't exist **or** you aren't a member — the two are indistinguishable on purpose |
 | 405 | `method_not_allowed` | |
 | 409 | `conflict` | Duplicate, or would break an invariant (e.g. removing the last owner) |
-| 413 | `payload_too_large` | JSON bodies are limited to 64 KiB |
+| 413 | `payload_too_large` | JSON bodies are limited to 64 KiB; uploaded files to 50 MiB each |
 | 415 | `unsupported_media_type` | |
 | 500 | `internal_error` | Details are logged server-side only |
 

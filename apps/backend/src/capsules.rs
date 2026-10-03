@@ -28,7 +28,9 @@ use crate::{
 	authz::{self, Access},
 	created,
 	error::{ApiError, ApiResult},
-	json_body, no_content, ok,
+	json_body,
+	media::{self, LinkScope},
+	no_content, ok,
 	reference::{CapsuleStatus, MediaType, Role},
 	respond, validate, with_state,
 };
@@ -415,10 +417,12 @@ async fn cancel(state: AppState, user: CurrentUser, id: i64) -> ApiResult<Respon
 /// Deletes a capsule in any status (edit rule). Its media links go with it.
 async fn delete(state: AppState, user: CurrentUser, id: i64) -> ApiResult<Response> {
 	authorize_edit(&state, user, id).await?;
+	let media = media::linked_media(&state.db, LinkScope::Capsule(id)).await?;
 	sqlx::query("DELETE FROM time_capsules WHERE id = $1")
 		.bind(id)
 		.execute(&state.db)
 		.await?;
+	media::delete_orphaned(&state.db, &state.media_dir, &media).await?;
 	no_content()
 }
 

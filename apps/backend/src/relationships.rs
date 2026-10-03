@@ -11,7 +11,9 @@ use crate::{
 	authz::{self, Access},
 	created,
 	error::{ApiError, ApiResult},
-	json_body, no_content, ok,
+	json_body,
+	media::{self, LinkScope},
+	no_content, ok,
 	reference::{ProfileType, RelationshipType, Role},
 	respond, validate, with_state,
 };
@@ -260,10 +262,12 @@ async fn update(
 
 async fn delete(state: AppState, user: CurrentUser, id: i64) -> ApiResult<Response> {
 	authz::require_relationship(&state.db, user, id, Access::Own).await?;
+	let media = media::linked_media(&state.db, LinkScope::Relationship(id)).await?;
 	sqlx::query("DELETE FROM relationships WHERE id = $1")
 		.bind(id)
 		.execute(&state.db)
 		.await?;
+	media::delete_orphaned(&state.db, &state.media_dir, &media).await?;
 	no_content()
 }
 

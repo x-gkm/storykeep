@@ -4,6 +4,7 @@ pub mod capsules;
 pub mod development;
 pub mod error;
 pub mod measurements;
+pub mod media;
 pub mod memories;
 pub mod profiles;
 pub mod reference;
@@ -57,6 +58,8 @@ pub fn app(state: AppState) -> impl Filter<Extract = (impl Reply,), Error = Infa
 			.or(development::routes(&state))
 			.unify()
 			.or(measurements::routes(&state))
+			.unify()
+			.or(media::routes(&state))
 			.unify(),
 	);
 

@@ -11,7 +11,9 @@ use crate::{
 	authz::{self, Access},
 	created,
 	error::{ApiError, ApiResult},
-	json_body, no_content, ok,
+	json_body,
+	media::{self, LinkScope},
+	no_content, ok,
 	reference::{ProfileType, RelationshipType, Role},
 	relationships::{self, Relationship},
 	respond, validate, with_state,
@@ -213,9 +215,11 @@ async fn delete(state: AppState, user: CurrentUser, id: i64) -> ApiResult<Respon
 		return Err(ApiError::Forbidden);
 	}
 
+	let media = media::linked_media(&state.db, LinkScope::Profile(id)).await?;
 	sqlx::query("DELETE FROM profiles WHERE id = $1")
 		.bind(id)
 		.execute(&state.db)
 		.await?;
+	media::delete_orphaned(&state.db, &state.media_dir, &media).await?;
 	no_content()
 }

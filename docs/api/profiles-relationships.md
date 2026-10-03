@@ -110,7 +110,7 @@ Manage access.
 
 ### `DELETE /api/relationships/{id}`
 
-`OWNER` only. Deletes its memories, time capsules and memberships (uploaded media files remain). → `204`.
+`OWNER` only. Deletes its memories, time capsules and memberships, plus media files used only by them. → `204`.
 
 ## Members
 

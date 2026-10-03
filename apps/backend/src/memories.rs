@@ -17,7 +17,9 @@ use crate::{
 	authz::{self, Access},
 	created,
 	error::{ApiError, ApiResult},
-	json_body, no_content, ok,
+	json_body,
+	media::{self, LinkScope},
+	no_content, ok,
 	reference::{MediaType, MemoryCategory, Role},
 	respond, tags, validate, with_state,
 };
@@ -472,10 +474,12 @@ async fn update(
 /// Deletes the memory and its tag/media links. Media rows and files are left for Part 6 to manage.
 async fn delete(state: AppState, user: CurrentUser, id: i64) -> ApiResult<Response> {
 	require_editable(&state.db, user, id).await?;
+	let media = media::linked_media(&state.db, LinkScope::Memory(id)).await?;
 	sqlx::query("DELETE FROM memories WHERE id = $1")
 		.bind(id)
 		.execute(&state.db)
 		.await?;
+	media::delete_orphaned(&state.db, &state.media_dir, &media).await?;
 	no_content()
 }
 
