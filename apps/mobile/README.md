@@ -28,6 +28,18 @@ flutter run --dart-define=API_BASE_URL=http://192.168.1.20:3000
 `API_BASE_URL` is the server root, **without** `/api`. Without it the app uses
 `http://10.0.2.2:3000` on Android and `http://127.0.0.1:3000` on iOS (simulator).
 
+### Linux desktop
+
+The same app also builds as a Linux desktop app, which is the quickest way to try it without a phone. It talks to `http://127.0.0.1:3000` by default:
+
+```sh
+flutter run -d linux
+# or build once and run the binary
+flutter build linux --debug && build/linux/x64/debug/bundle/storykeep
+```
+
+On Linux there's no camera capture (the Photo/Video buttons are hidden), and the sign-in token is stored with the desktop keyring (Secret Service: GNOME Keyring or KWallet). Without a running keyring the app keeps the token in memory only, so you sign in again on each launch.
+
 Plain HTTP is allowed only for development: the Android **debug** manifest sets
 `usesCleartextTraffic` (release builds keep Android's default of blocking it), and iOS
 allows local networking only (`NSAllowsLocalNetworking`). Use HTTPS in production.

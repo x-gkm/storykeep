@@ -40,11 +40,20 @@ nix develop
    cd apps/web && bun install && bun run dev
    ```
 
-4. **Run the mobile app** on an emulator or device (Android emulators reach the host's backend at `10.0.2.2`):
+4. **Run the mobile app** — as a Linux desktop app (no phone needed):
 
    ```sh
-   cd apps/mobile && flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
+   cd apps/mobile && flutter run -d linux
    ```
+
+   or on an Android phone over USB, forwarding its port 3000 to this machine:
+
+   ```sh
+   adb reverse tcp:3000 tcp:3000
+   cd apps/mobile && flutter run --dart-define=API_BASE_URL=http://127.0.0.1:3000
+   ```
+
+   See the [mobile README](apps/mobile/README.md) for emulators and other setups.
 
 Register an account in either client, create a profile, and start adding memories.
 

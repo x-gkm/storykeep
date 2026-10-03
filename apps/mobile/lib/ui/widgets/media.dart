@@ -12,11 +12,11 @@ import '../../util/format.dart';
 import 'common.dart';
 
 IconData mediaTypeIcon(String type) => switch (type) {
-      'IMAGE' => Icons.image_outlined,
-      'VIDEO' => Icons.movie_outlined,
-      'AUDIO' => Icons.audiotrack_outlined,
-      _ => Icons.description_outlined,
-    };
+  'IMAGE' => Icons.image_outlined,
+  'VIDEO' => Icons.movie_outlined,
+  'AUDIO' => Icons.audiotrack_outlined,
+  _ => Icons.description_outlined,
+};
 
 /// An image from an authenticated `content_url`, loaded with the bearer token.
 class AuthImage extends StatelessWidget {
@@ -32,10 +32,15 @@ class AuthImage extends StatelessWidget {
       api.resolve(contentUrl).toString(),
       headers: api.authHeaders,
       fit: fit,
-      loadingBuilder: (context, child, progress) =>
-          progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      errorBuilder: (context, error, stack) =>
-          Center(child: Icon(Icons.broken_image_outlined, color: Theme.of(context).colorScheme.outline)),
+      loadingBuilder: (context, child, progress) => progress == null
+          ? child
+          : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      errorBuilder: (context, error, stack) => Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+      ),
     );
   }
 }
@@ -68,14 +73,23 @@ class MediaThumb extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(mediaTypeIcon(item.mediaType), size: 32, color: scheme.primary),
+                      Icon(
+                        mediaTypeIcon(item.mediaType),
+                        size: 32,
+                        color: scheme.primary,
+                      ),
                       const SizedBox(height: 6),
-                      Text(item.fileName,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.labelSmall),
-                      Text(formatBytes(item.fileSize), style: Theme.of(context).textTheme.labelSmall),
+                      Text(
+                        item.fileName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      Text(
+                        formatBytes(item.fileSize),
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
                     ],
                   ),
                 ),
@@ -100,7 +114,12 @@ class MediaThumb extends StatelessWidget {
 
 /// A grid of media; tapping opens images in a viewer and other files externally.
 class MediaGrid extends StatelessWidget {
-  const MediaGrid({super.key, required this.items, this.canRemove, this.onRemove});
+  const MediaGrid({
+    super.key,
+    required this.items,
+    this.canRemove,
+    this.onRemove,
+  });
 
   final List<MediaItem> items;
   final bool Function(MediaItem)? canRemove;
@@ -132,18 +151,27 @@ class MediaGrid extends StatelessWidget {
 
 /// Opens [items][index]: images in an in-app viewer, other types downloaded to a
 /// temporary file and handed to the platform's default app.
-Future<void> openMedia(BuildContext context, List<MediaItem> items, int index) async {
+Future<void> openMedia(
+  BuildContext context,
+  List<MediaItem> items,
+  int index,
+) async {
   final item = items[index];
   if (item.isImage) {
     final images = items.where((m) => m.isImage).toList();
-    await Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => ImageViewer(images: images, initialIndex: images.indexOf(item)),
-    ));
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            ImageViewer(images: images, initialIndex: images.indexOf(item)),
+      ),
+    );
     return;
   }
   final api = context.read<ApiClient>();
   final messenger = ScaffoldMessenger.of(context);
-  messenger.showSnackBar(SnackBar(content: Text('Downloading ${item.fileName}…')));
+  messenger.showSnackBar(
+    SnackBar(content: Text('Downloading ${item.fileName}…')),
+  );
   try {
     final dir = await getTemporaryDirectory();
     final safeName = item.fileName.replaceAll(RegExp(r'[/\\]'), '_');
@@ -154,7 +182,9 @@ Future<void> openMedia(BuildContext context, List<MediaItem> items, int index) a
     messenger.hideCurrentSnackBar();
     final result = await OpenFilex.open(file.path, type: item.mimeType);
     if (result.type != ResultType.done) {
-      messenger.showSnackBar(SnackBar(content: Text('Couldn\'t open the file: ${result.message}')));
+      messenger.showSnackBar(
+        SnackBar(content: Text('Couldn\'t open the file: ${result.message}')),
+      );
     }
   } catch (e) {
     messenger
@@ -174,7 +204,9 @@ class ImageViewer extends StatefulWidget {
 }
 
 class _ImageViewerState extends State<ImageViewer> {
-  late final PageController _controller = PageController(initialPage: widget.initialIndex);
+  late final PageController _controller = PageController(
+    initialPage: widget.initialIndex,
+  );
   late int _index = widget.initialIndex;
 
   @override
@@ -208,7 +240,11 @@ class _ImageViewerState extends State<ImageViewer> {
 
 /// Files picked on the device and waiting to be uploaded.
 class PendingFilesList extends StatelessWidget {
-  const PendingFilesList({super.key, required this.files, required this.onRemove});
+  const PendingFilesList({
+    super.key,
+    required this.files,
+    required this.onRemove,
+  });
 
   final List<UploadFile> files;
   final void Function(UploadFile) onRemove;
@@ -221,18 +257,28 @@ class PendingFilesList extends StatelessWidget {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: Icon(f.path != null && _looksLikeImage(f.filename) ? Icons.image_outlined : Icons.attach_file),
+            leading: Icon(
+              f.path != null && _looksLikeImage(f.filename)
+                  ? Icons.image_outlined
+                  : Icons.attach_file,
+            ),
             title: Text(f.filename, overflow: TextOverflow.ellipsis),
             subtitle: const Text('Will be uploaded on save'),
-            trailing: IconButton(tooltip: 'Remove', icon: const Icon(Icons.close), onPressed: () => onRemove(f)),
+            trailing: IconButton(
+              tooltip: 'Remove',
+              icon: const Icon(Icons.close),
+              onPressed: () => onRemove(f),
+            ),
           ),
       ],
     );
   }
 }
 
-bool _looksLikeImage(String name) =>
-    RegExp(r'\.(jpe?g|png|gif|webp|heic|heif)$', caseSensitive: false).hasMatch(name);
+bool _looksLikeImage(String name) => RegExp(
+  r'\.(jpe?g|png|gif|webp|heic|heif)$',
+  caseSensitive: false,
+).hasMatch(name);
 
 /// Buttons to pick photos/videos from the gallery, capture with the camera or
 /// choose any file. Calls [onPicked] with the chosen files.
@@ -242,7 +288,10 @@ class AttachButtons extends StatelessWidget {
   final void Function(List<UploadFile>) onPicked;
   final bool enabled;
 
-  Future<void> _run(BuildContext context, Future<List<UploadFile>> Function() pick) async {
+  Future<void> _run(
+    BuildContext context,
+    Future<List<UploadFile>> Function() pick,
+  ) async {
     try {
       final files = await pick();
       if (files.isNotEmpty) onPicked(files);
@@ -251,11 +300,14 @@ class AttachButtons extends StatelessWidget {
     }
   }
 
-  static UploadFile _fromXFile(XFile f) => UploadFile.path(f.path, filename: f.name);
+  static UploadFile _fromXFile(XFile f) =>
+      UploadFile.path(f.path, filename: f.name);
 
   @override
   Widget build(BuildContext context) {
     final picker = ImagePicker();
+    // Desktop platforms (e.g. Linux) have no camera support in image_picker.
+    final hasCamera = picker.supportsImageSource(ImageSource.camera);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
@@ -263,42 +315,56 @@ class AttachButtons extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: !enabled
               ? null
-              : () => _run(context, () async => (await picker.pickMultipleMedia()).map(_fromXFile).toList()),
+              : () => _run(
+                  context,
+                  () async => (await picker.pickMultipleMedia())
+                      .map(_fromXFile)
+                      .toList(),
+                ),
           icon: const Icon(Icons.photo_library_outlined),
           label: const Text('Gallery'),
         ),
-        OutlinedButton.icon(
-          onPressed: !enabled
-              ? null
-              : () => _run(context, () async {
-                    final f = await picker.pickImage(source: ImageSource.camera);
+        if (hasCamera) ...[
+          OutlinedButton.icon(
+            onPressed: !enabled
+                ? null
+                : () => _run(context, () async {
+                    final f = await picker.pickImage(
+                      source: ImageSource.camera,
+                    );
                     return [if (f != null) _fromXFile(f)];
                   }),
-          icon: const Icon(Icons.photo_camera_outlined),
-          label: const Text('Photo'),
-        ),
-        OutlinedButton.icon(
-          onPressed: !enabled
-              ? null
-              : () => _run(context, () async {
-                    final f = await picker.pickVideo(source: ImageSource.camera);
+            icon: const Icon(Icons.photo_camera_outlined),
+            label: const Text('Photo'),
+          ),
+          OutlinedButton.icon(
+            onPressed: !enabled
+                ? null
+                : () => _run(context, () async {
+                    final f = await picker.pickVideo(
+                      source: ImageSource.camera,
+                    );
                     return [if (f != null) _fromXFile(f)];
                   }),
-          icon: const Icon(Icons.videocam_outlined),
-          label: const Text('Video'),
-        ),
+            icon: const Icon(Icons.videocam_outlined),
+            label: const Text('Video'),
+          ),
+        ],
         OutlinedButton.icon(
           onPressed: !enabled
               ? null
               : () => _run(context, () async {
-                    final picked = await FilePicker.pickFiles(type: FileType.any);
-                    return [
-                      for (final f in picked)
-                        f.path != null
-                            ? UploadFile.path(f.path!, filename: f.name)
-                            : UploadFile.bytes(await f.readAsBytes(), filename: f.name),
-                    ];
-                  }),
+                  final picked = await FilePicker.pickFiles(type: FileType.any);
+                  return [
+                    for (final f in picked)
+                      f.path != null
+                          ? UploadFile.path(f.path!, filename: f.name)
+                          : UploadFile.bytes(
+                              await f.readAsBytes(),
+                              filename: f.name,
+                            ),
+                  ];
+                }),
           icon: const Icon(Icons.attach_file),
           label: const Text('Files'),
         ),

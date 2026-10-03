@@ -2,6 +2,14 @@
   perSystem =
     { pkgs, ... }:
     let
+      # Native libraries for `flutter build linux` (secure token storage).
+      flutter = pkgs.flutter.override {
+        extraPkgConfigPackages = with pkgs; [
+          libsecret
+          libgcrypt
+          libgpg-error
+        ];
+      };
       androidSdk = (pkgs.androidenv.composeAndroidPackages { includeNDK = true; }).androidsdk;
       jdk = pkgs.jdk;
     in
@@ -13,7 +21,7 @@
 
       devshells.default = {
         packages = [
-          pkgs.flutter
+          flutter
           androidSdk
           jdk
         ];
