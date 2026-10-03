@@ -18,7 +18,8 @@ Enter the devshell with `nix develop`, then:
 backend-services
 
 # backend (reads DATABASE_URL from the devshell; serves on 127.0.0.1:3000)
-cd apps/backend && cargo run
+cd apps/backend && cargo run      # applies pending migrations on startup
+cd apps/backend && cargo test     # schema/constraint tests (needs the database running)
 
 # web
 cd apps/web && bun install && bun dev
