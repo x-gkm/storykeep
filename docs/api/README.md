@@ -6,6 +6,7 @@ Base URL: `http://127.0.0.1:3000/api` in development. All bodies are JSON (`Cont
 |------|----------|
 | Registration, login, sessions, current user | [auth-users.md](auth-users.md) |
 | Profiles, relationships, members | [profiles-relationships.md](profiles-relationships.md) |
+| Time capsules | [capsules.md](capsules.md) |
 
 `GET /health` (outside `/api`) reports server and database status.
 
