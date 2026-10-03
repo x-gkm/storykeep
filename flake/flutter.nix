@@ -6,6 +6,11 @@
       jdk = pkgs.jdk;
     in
     {
+      nixpkgs.config = {
+        allowUnfree = true;
+        android_sdk.accept_license = true;
+      };
+
       devshells.default = {
         packages = [
           pkgs.flutter

@@ -16,18 +16,20 @@
       };
     in
     {
-      options.nixpkgs.overlays = lib.mkOption {
-        type = lib.types.listOf overlayType;
-        default = [ ];
+      options.nixpkgs = {
+        overlays = lib.mkOption {
+          type = lib.types.listOf overlayType;
+          default = [ ];
+        };
+        config = lib.mkOption {
+          type = lib.types.attrsOf lib.types.anything;
+          default = { };
+        };
       };
 
       config._module.args.pkgs = import inputs.nixpkgs {
         inherit system;
-        overlays = config.nixpkgs.overlays;
-        config = {
-          allowUnfree = true;
-          android_sdk.accept_license = true;
-        };
+        inherit (config.nixpkgs) overlays config;
       };
     }
   );
