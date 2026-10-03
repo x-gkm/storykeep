@@ -1,9 +1,11 @@
 pub mod auth;
 pub mod authz;
 pub mod error;
+pub mod memories;
 pub mod profiles;
 pub mod reference;
 pub mod relationships;
+pub mod tags;
 pub mod users;
 pub mod validate;
 
@@ -42,6 +44,10 @@ pub fn app(state: AppState) -> impl Filter<Extract = (impl Reply,), Error = Infa
 			.or(profiles::routes(&state))
 			.unify()
 			.or(relationships::routes(&state))
+			.unify()
+			.or(memories::routes(&state))
+			.unify()
+			.or(tags::routes(&state))
 			.unify(),
 	);
 
