@@ -167,10 +167,7 @@ async fn authorize<'e>(
 /// Content edit rule: the creator (while they have write access) or anyone with manage access.
 async fn authorize_edit(state: &AppState, user: CurrentUser, id: i64) -> ApiResult<()> {
 	let (created_by, role) = authorize(&state.db, user, id, Access::Write).await?;
-	if created_by != user.id && !role.allows(Access::Manage) {
-		return Err(ApiError::Forbidden);
-	}
-	Ok(())
+	authz::require_content_editor(role, user, created_by)
 }
 
 /// Locks the capsule row for the rest of the transaction and requires it to still be locked.

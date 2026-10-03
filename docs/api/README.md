@@ -55,7 +55,7 @@ Access is granted through relationship membership; the server checks it on every
 | `MEMBER` | ✓ | ✓ | | |
 | `VIEWER` | ✓ | | | |
 
-"Content" is memories, media, tags, development data and time capsules. Only an `OWNER` can grant, change or remove the `OWNER` role, and every relationship keeps at least one `OWNER`.
+"Content" is memories, media, tags, development data and time capsules. Writers may edit or delete the content items they created; `OWNER` and `PARENT` may edit or delete anyone's. Only an `OWNER` can grant, change or remove the `OWNER` role, and every relationship keeps at least one `OWNER`.
 
 Access to a **profile** comes from your strongest role in any relationship with it.
 

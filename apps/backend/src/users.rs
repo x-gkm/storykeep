@@ -12,6 +12,14 @@ use crate::{
 	json_body, no_content, ok, respond, validate, with_state,
 };
 
+/// A user as shown on content they created (author, uploader).
+#[derive(Debug, Clone, Serialize)]
+pub struct UserSummary {
+	pub id: i64,
+	pub first_name: String,
+	pub last_name: String,
+}
+
 /// Public view of a user account; never includes the password hash.
 #[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct User {

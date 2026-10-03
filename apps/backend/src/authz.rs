@@ -115,3 +115,13 @@ impl Role {
 		}
 	}
 }
+
+/// Content edit rule: anyone with manage access may edit or delete any content
+/// item; other writers only the items they created.
+pub fn require_content_editor(role: Role, user: CurrentUser, created_by: i64) -> ApiResult<()> {
+	if role.allows(Access::Manage) || (created_by == user.id && role.allows(Access::Write)) {
+		Ok(())
+	} else {
+		Err(ApiError::Forbidden)
+	}
+}

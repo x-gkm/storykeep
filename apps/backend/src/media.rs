@@ -37,7 +37,9 @@ use crate::{
 	error::{ApiError, ApiResult},
 	no_content, ok,
 	reference::{CapsuleStatus, MediaType},
-	respond, with_state,
+	respond,
+	users::UserSummary,
+	with_state,
 };
 
 /// Largest accepted file, in bytes.
@@ -59,17 +61,10 @@ pub struct Media {
 	pub file_name: String,
 	pub mime_type: String,
 	pub file_size: Option<i64>,
-	pub uploaded_by: Uploader,
+	pub uploaded_by: UserSummary,
 	pub created_at: DateTime<Utc>,
 	/// Where the file itself can be downloaded.
 	pub content_url: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct Uploader {
-	pub id: i64,
-	pub first_name: String,
-	pub last_name: String,
 }
 
 #[derive(sqlx::FromRow)]
@@ -93,7 +88,7 @@ impl From<MediaRow> for Media {
 			file_name: row.file_name,
 			mime_type: row.mime_type,
 			file_size: row.file_size,
-			uploaded_by: Uploader {
+			uploaded_by: UserSummary {
 				id: row.uploader_id,
 				first_name: row.uploader_first_name,
 				last_name: row.uploader_last_name,
@@ -493,10 +488,7 @@ async fn detach(
 		// Don't reveal what's in a capsule to members who can't act on it.
 		return Err(ApiError::NotFound("media"));
 	}
-	let allowed = role.allows(Access::Manage) || (own_upload && role.allows(Access::Write));
-	if !allowed {
-		return Err(ApiError::Forbidden);
-	}
+	authz::require_content_editor(role, user, uploaded_by)?;
 	if info.capsule_locked == Some(false) {
 		return Err(ApiError::conflict(
 			"media can only be removed while the time capsule is locked",

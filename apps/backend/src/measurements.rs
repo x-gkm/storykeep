@@ -12,13 +12,15 @@ use warp::{Filter, reply::Response};
 use crate::{
 	AppState, Routes,
 	auth::{CurrentUser, authenticated},
-	authz::Access,
+	authz::{self, Access},
 	created,
-	development::{Author, profile_access, require_editor, validate_event_date},
+	development::{profile_access, validate_event_date},
 	error::{ApiError, ApiResult},
 	json_body, no_content, ok,
 	reference::MeasurementType,
-	respond, validate, with_state,
+	respond,
+	users::UserSummary,
+	validate, with_state,
 };
 
 /// `NUMERIC(10, 3)`: at most 7 integer digits and 3 decimal places.
@@ -35,7 +37,7 @@ pub struct Measurement {
 	#[serde(serialize_with = "rust_decimal::serde::float::serialize")]
 	pub value: Decimal,
 	pub measurement_date: NaiveDate,
-	pub created_by: Author,
+	pub created_by: UserSummary,
 	pub created_at: DateTime<Utc>,
 }
 
@@ -62,7 +64,7 @@ impl From<MeasurementRow> for Measurement {
 			unit: row.unit,
 			value: row.value,
 			measurement_date: row.measurement_date,
-			created_by: Author {
+			created_by: UserSummary {
 				id: row.author_id,
 				first_name: row.author_first_name,
 				last_name: row.author_last_name,
@@ -343,7 +345,7 @@ async fn update(
 ) -> ApiResult<Response> {
 	let (profile_id, created_by) = measurement_owner(&state.db, id).await?;
 	let profile = profile_access(&state.db, user, profile_id, Access::Write, "measurement").await?;
-	require_editor(&profile, user, created_by)?;
+	authz::require_content_editor(profile.role, user, created_by)?;
 	let value = validate_value(body.value)?;
 	validate_event_date(
 		"measurement_date",
@@ -367,7 +369,7 @@ async fn update(
 async fn delete(state: AppState, user: CurrentUser, id: i64) -> ApiResult<Response> {
 	let (profile_id, created_by) = measurement_owner(&state.db, id).await?;
 	let profile = profile_access(&state.db, user, profile_id, Access::Write, "measurement").await?;
-	require_editor(&profile, user, created_by)?;
+	authz::require_content_editor(profile.role, user, created_by)?;
 
 	sqlx::query("DELETE FROM measurements WHERE id = $1")
 		.bind(id)

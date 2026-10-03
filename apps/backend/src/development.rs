@@ -18,20 +18,14 @@ use crate::{
 	error::{ApiError, ApiResult},
 	json_body, no_content, ok,
 	reference::{DevelopmentDomain, ProfileType, Role},
-	respond, validate, with_state,
+	respond,
+	users::UserSummary,
+	validate, with_state,
 };
 
 const MAX_NOTES_CHARS: usize = 10_000;
 const MAX_OBSERVATION_CHARS: usize = 5_000;
 const MAX_OBSERVATIONS: usize = 50;
-
-/// The user who created a record or measurement.
-#[derive(Debug, Clone, Serialize)]
-pub struct Author {
-	pub id: i64,
-	pub first_name: String,
-	pub last_name: String,
-}
 
 #[derive(Debug, Serialize)]
 pub struct DevelopmentRecord {
@@ -39,7 +33,7 @@ pub struct DevelopmentRecord {
 	pub profile_id: i64,
 	pub record_date: NaiveDate,
 	pub notes: Option<String>,
-	pub created_by: Author,
+	pub created_by: UserSummary,
 	pub created_at: DateTime<Utc>,
 	pub observations: Vec<Observation>,
 }
@@ -111,20 +105,6 @@ pub(crate) async fn profile_access(
 		profile_type,
 		date_of_birth,
 	})
-}
-
-/// Content edit rule: the creator may edit their own items while they keep write
-/// access; anyone with manage access may edit everyone's.
-pub(crate) fn require_editor(
-	profile: &ProfileAccess,
-	user: CurrentUser,
-	created_by: i64,
-) -> ApiResult<()> {
-	if created_by == user.id || profile.role.allows(Access::Manage) {
-		Ok(())
-	} else {
-		Err(ApiError::Forbidden)
-	}
 }
 
 /// Event dates must not be in the future nor before the profile's date of birth.
@@ -229,7 +209,7 @@ async fn with_observations(db: &PgPool, rows: Vec<RecordRow>) -> ApiResult<Vec<D
 			profile_id: row.profile_id,
 			record_date: row.record_date,
 			notes: row.notes,
-			created_by: Author {
+			created_by: UserSummary {
 				id: row.author_id,
 				first_name: row.author_first_name,
 				last_name: row.author_last_name,
@@ -422,7 +402,7 @@ async fn update(
 		"development record",
 	)
 	.await?;
-	require_editor(&profile, user, created_by)?;
+	authz::require_content_editor(profile.role, user, created_by)?;
 	let record = validate_record(body, &profile)?;
 
 	let mut tx = state.db.begin().await?;
@@ -452,7 +432,7 @@ async fn delete(state: AppState, user: CurrentUser, id: i64) -> ApiResult<Respon
 		"development record",
 	)
 	.await?;
-	require_editor(&profile, user, created_by)?;
+	authz::require_content_editor(profile.role, user, created_by)?;
 
 	sqlx::query("DELETE FROM development_records WHERE id = $1")
 		.bind(id)

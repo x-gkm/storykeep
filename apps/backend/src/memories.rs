@@ -21,7 +21,9 @@ use crate::{
 	media::{self, LinkScope},
 	no_content, ok,
 	reference::{MediaType, MemoryCategory, Role},
-	respond, tags, validate, with_state,
+	respond, tags,
+	users::UserSummary,
+	validate, with_state,
 };
 
 const TITLE_MAX: usize = 200;
@@ -39,20 +41,13 @@ pub struct Memory {
 	pub description: Option<String>,
 	/// When the remembered event happened.
 	pub memory_date: NaiveDate,
-	pub created_by: Author,
+	pub created_by: UserSummary,
 	/// When the record was created, as opposed to `memory_date`.
 	pub created_at: DateTime<Utc>,
 	pub updated_at: DateTime<Utc>,
 	/// Tag names, sorted case-insensitively.
 	pub tags: Vec<String>,
 	pub media: Vec<MemoryMedia>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct Author {
-	pub id: i64,
-	pub first_name: String,
-	pub last_name: String,
 }
 
 #[derive(Debug, Serialize, sqlx::FromRow)]
@@ -189,7 +184,7 @@ async fn attach(db: &PgPool, rows: Vec<MemoryRow>) -> ApiResult<Vec<Memory>> {
 			title: row.title,
 			description: row.description,
 			memory_date: row.memory_date,
-			created_by: Author {
+			created_by: UserSummary {
 				id: row.author_id,
 				first_name: row.author_first_name,
 				last_name: row.author_last_name,
@@ -226,10 +221,7 @@ pub async fn require_memory(
 /// Content edit rule: the creator (with write access) or anyone with manage access.
 async fn require_editable(db: &PgPool, user: CurrentUser, id: i64) -> ApiResult<()> {
 	let (role, created_by) = require_memory(db, user, id, Access::Write).await?;
-	if created_by != user.id && !role.allows(Access::Manage) {
-		return Err(ApiError::Forbidden);
-	}
-	Ok(())
+	authz::require_content_editor(role, user, created_by)
 }
 
 pub fn routes(state: &AppState) -> Routes {
