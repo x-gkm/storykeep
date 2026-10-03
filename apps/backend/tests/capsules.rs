@@ -294,6 +294,7 @@ async fn unlocked_capsules_become_available_and_open_once(pool: PgPool) {
 			"file_name": "first-steps.jpg",
 			"mime_type": "image/jpeg",
 			"file_size": 1234,
+			"uploaded_by": { "id": opened.body["created_by"], "first_name": "Test", "last_name": "owner" },
 			"created_at": opened.body["media"][0]["created_at"],
 			"content_url": format!("/api/media/{media_id}/content"),
 		}])

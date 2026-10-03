@@ -31,7 +31,7 @@ use crate::{
 	json_body,
 	media::{self, LinkScope},
 	no_content, ok,
-	reference::{CapsuleStatus, MediaType, Role},
+	reference::{CapsuleStatus, Role},
 	respond, validate, with_state,
 };
 
@@ -81,18 +81,7 @@ pub struct Capsule {
 #[derive(Debug, Serialize)]
 pub struct CapsuleContent {
 	pub message: Option<String>,
-	pub media: Vec<CapsuleMedia>,
-}
-
-#[derive(Debug, Serialize, sqlx::FromRow)]
-pub struct CapsuleMedia {
-	pub id: i64,
-	pub media_type: MediaType,
-	pub file_name: String,
-	pub mime_type: String,
-	pub file_size: Option<i64>,
-	pub created_at: DateTime<Utc>,
-	pub content_url: String,
+	pub media: Vec<media::Media>,
 }
 
 /// Capsule metadata, without content.
@@ -118,17 +107,7 @@ async fn fetch_content(conn: &mut PgConnection, id: i64) -> ApiResult<Option<Cap
 		return Ok(None);
 	};
 
-	let media = sqlx::query_as(
-		"SELECT m.id, m.media_type_id AS media_type, m.file_name, m.mime_type, m.file_size,
-			m.created_at, '/api/media/' || m.id || '/content' AS content_url
-		FROM capsule_media cm
-		JOIN media m ON m.id = cm.media_id
-		WHERE cm.capsule_id = $1
-		ORDER BY m.created_at, m.id",
-	)
-	.bind(id)
-	.fetch_all(&mut *conn)
-	.await?;
+	let media = media::list_for_capsule(&mut *conn, id).await?;
 	Ok(Some(CapsuleContent { message, media }))
 }
 

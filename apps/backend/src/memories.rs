@@ -20,7 +20,7 @@ use crate::{
 	json_body,
 	media::{self, LinkScope},
 	no_content, ok,
-	reference::{MediaType, MemoryCategory, Role},
+	reference::{MemoryCategory, Role},
 	respond, tags,
 	users::UserSummary,
 	validate, with_state,
@@ -47,19 +47,7 @@ pub struct Memory {
 	pub updated_at: DateTime<Utc>,
 	/// Tag names, sorted case-insensitively.
 	pub tags: Vec<String>,
-	pub media: Vec<MemoryMedia>,
-}
-
-#[derive(Debug, Serialize, sqlx::FromRow)]
-pub struct MemoryMedia {
-	pub id: i64,
-	pub media_type: MediaType,
-	pub file_name: String,
-	pub mime_type: String,
-	pub file_size: Option<i64>,
-	pub created_at: DateTime<Utc>,
-	#[sqlx(skip)]
-	pub content_url: String,
+	pub media: Vec<media::Media>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -146,32 +134,7 @@ async fn attach(db: &PgPool, rows: Vec<MemoryRow>) -> ApiResult<Vec<Memory>> {
 		tags.entry(memory_id).or_default().push(name);
 	}
 
-	#[derive(sqlx::FromRow)]
-	struct MediaRow {
-		memory_id: i64,
-		#[sqlx(flatten)]
-		media: MemoryMedia,
-	}
-	let mut media: HashMap<i64, Vec<MemoryMedia>> = HashMap::new();
-	let media_rows: Vec<MediaRow> = sqlx::query_as(
-		"SELECT mm.memory_id, md.id, md.media_type_id AS media_type, md.file_name, md.mime_type,
-			md.file_size, md.created_at
-		FROM memory_media mm
-		JOIN media md ON md.id = mm.media_id
-		WHERE mm.memory_id = ANY($1)
-		ORDER BY md.created_at, md.id",
-	)
-	.bind(&ids)
-	.fetch_all(db)
-	.await?;
-	for MediaRow {
-		memory_id,
-		media: mut item,
-	} in media_rows
-	{
-		item.content_url = format!("/api/media/{}/content", item.id);
-		media.entry(memory_id).or_default().push(item);
-	}
+	let mut media = media::list_for_memories(db, &ids).await?;
 
 	Ok(rows
 		.into_iter()

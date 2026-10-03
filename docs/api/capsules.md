@@ -57,6 +57,7 @@ Only when `status` is `OPENED` (from `GET /api/capsules/{id}` or `POST /api/caps
       "file_name": "first-steps.jpg",
       "mime_type": "image/jpeg",
       "file_size": 1234,
+      "uploaded_by": { "id": 1, "first_name": "Ada", "last_name": "Lovelace" },
       "created_at": "2026-10-03T17:30:00Z",
       "content_url": "/api/media/40/content"
     }

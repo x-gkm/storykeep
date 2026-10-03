@@ -11,6 +11,7 @@
 //! is `LOCKED` and its unlock time is still in the future.
 
 use std::{
+	collections::HashMap,
 	io,
 	path::{Component, Path, PathBuf},
 };
@@ -150,12 +151,62 @@ pub async fn fetch<'e>(db: impl PgExecutor<'e>, user: CurrentUser, id: i64) -> A
 	Ok(row.into())
 }
 
+/// Media attached to each of `memory_ids`, oldest first; memories without media
+/// are absent from the map. The caller must have checked read access.
+pub async fn list_for_memories<'e>(
+	db: impl PgExecutor<'e>,
+	memory_ids: &[i64],
+) -> ApiResult<HashMap<i64, Vec<Media>>> {
+	#[derive(sqlx::FromRow)]
+	struct LinkedRow {
+		memory_id: i64,
+		#[sqlx(flatten)]
+		media: MediaRow,
+	}
+
+	let rows: Vec<LinkedRow> = sqlx::query_as(
+		"SELECT mm.memory_id, m.id, m.media_type_id AS media_type, m.file_name, m.mime_type,
+			m.file_size, u.id AS uploader_id, u.first_name AS uploader_first_name,
+			u.last_name AS uploader_last_name, m.created_at
+		FROM memory_media mm
+		JOIN media m ON m.id = mm.media_id
+		JOIN users u ON u.id = m.uploaded_by
+		WHERE mm.memory_id = ANY($1)
+		ORDER BY m.created_at, m.id",
+	)
+	.bind(memory_ids)
+	.fetch_all(db)
+	.await?;
+
+	let mut media: HashMap<i64, Vec<Media>> = HashMap::new();
+	for row in rows {
+		media
+			.entry(row.memory_id)
+			.or_default()
+			.push(row.media.into());
+	}
+	Ok(media)
+}
+
 /// Media attached to a memory, oldest first. The caller must have checked read access.
 pub async fn list_for_memory<'e>(db: impl PgExecutor<'e>, memory_id: i64) -> ApiResult<Vec<Media>> {
+	Ok(list_for_memories(db, &[memory_id])
+		.await?
+		.remove(&memory_id)
+		.unwrap_or_default())
+}
+
+/// Media attached to a time capsule, oldest first. The caller must have checked
+/// read access **and** that the capsule's content may be revealed.
+pub async fn list_for_capsule<'e>(
+	db: impl PgExecutor<'e>,
+	capsule_id: i64,
+) -> ApiResult<Vec<Media>> {
 	let rows: Vec<MediaRow> = sqlx::query_as(select_media!(
-		"JOIN memory_media mm ON mm.media_id = m.id WHERE mm.memory_id = $1 ORDER BY m.id"
+		"JOIN capsule_media cm ON cm.media_id = m.id WHERE cm.capsule_id = $1
+		ORDER BY m.created_at, m.id"
 	))
-	.bind(memory_id)
+	.bind(capsule_id)
 	.fetch_all(db)
 	.await?;
 	Ok(rows.into_iter().map(Media::from).collect())

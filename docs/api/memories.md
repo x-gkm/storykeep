@@ -33,6 +33,7 @@ A memory in a relationship you aren't a member of returns `404`, exactly like on
       "file_name": "steps.jpg",
       "mime_type": "image/jpeg",
       "file_size": 248113,
+      "uploaded_by": { "id": 1, "first_name": "Ada", "last_name": "Lovelace" },
       "created_at": "2026-10-03T17:25:02Z",
       "content_url": "/api/media/40/content"
     }
