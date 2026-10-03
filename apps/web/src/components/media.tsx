@@ -85,11 +85,12 @@ export function MediaThumbs({ media, to }: { media: readonly Media[]; to: string
 export function MediaGallery({
   media,
   onRemove,
-  canRemove = false,
+  canRemove = () => false,
 }: {
   media: readonly Media[]
   onRemove?: (media: Media) => Promise<unknown>
-  canRemove?: boolean
+  /** Whether the current user may remove a given file. */
+  canRemove?: (media: Media) => boolean
 }) {
   const [removing, setRemoving] = useState<number | null>(null)
   const [error, setError] = useState<unknown>(null)
@@ -106,7 +107,7 @@ export function MediaGallery({
                 {item.file_name}
               </span>
               <span className="muted">{formatBytes(item.file_size)}</span>
-              {canRemove && onRemove && (
+              {onRemove && canRemove(item) && (
                 <Button
                   small
                   variant="ghost"

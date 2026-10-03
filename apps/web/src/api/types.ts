@@ -164,8 +164,7 @@ export interface Media {
   file_name: string
   mime_type: string
   file_size: number
-  /** Present on `/api/media/*` and upload responses; absent on media embedded in memories and capsules. */
-  uploaded_by?: Author
+  uploaded_by: Author
   created_at: Timestamp
   content_url: string
 }

@@ -36,9 +36,8 @@ export function MemoryMedia({ memory, relationship }: { memory: Memory; relation
     void queryClient.invalidateQueries({ queryKey: keys.memory(memory.id) })
     void queryClient.invalidateQueries({ queryKey: keys.timelineAll(relationship.id) })
   }
-  // The server allows removal by the uploader (with write access) or by managers. Embedded media
-  // doesn't say who uploaded it, so we offer removal to the memory's editors and let the server decide.
-  const mayRemove = canEditItem(relationship.role, memory.created_by.id, user.id)
+  // The server allows removal by the uploader (with write access) or by managers.
+  const mayRemove = (media: Media) => canEditItem(relationship.role, media.uploaded_by.id, user.id)
   return (
     <section aria-labelledby="media-heading" className="card">
       <h2 id="media-heading">Media</h2>
