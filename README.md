@@ -4,6 +4,7 @@ Relationship memory platform.
 
 ## Layout
 
+- `apps/backend` — API server (Rust, tokio + warp, Postgres via sqlx)
 - `apps/web` — web frontend (React + TypeScript + Vite, managed with Bun)
 - `apps/mobile` — mobile app (Flutter, Android + iOS)
 - `flake/` — Nix flake modules (devshell, Postgres, Rust, Flutter, Bun)
@@ -13,6 +14,12 @@ Relationship memory platform.
 Enter the devshell with `nix develop`, then:
 
 ```sh
+# database (Postgres on port 5433, data in ./data)
+backend-services
+
+# backend (reads DATABASE_URL from the devshell; serves on 127.0.0.1:3000)
+cd apps/backend && cargo run
+
 # web
 cd apps/web && bun install && bun dev
 
