@@ -7,6 +7,7 @@ Relationship memory platform.
 - `apps/backend` — API server (Rust, tokio + warp, Postgres via sqlx)
 - `apps/web` — web frontend (React + TypeScript + Vite, managed with Bun)
 - `apps/mobile` — mobile app (Flutter, Android + iOS)
+- `docs/` — [V1 specification](docs/spec.md) and [REST API reference](docs/api/README.md)
 - `flake/` — Nix flake modules (devshell, Postgres, Rust, Flutter, Bun)
 
 ## Development

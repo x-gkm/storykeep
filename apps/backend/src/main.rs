@@ -1,16 +1,9 @@
-use std::{convert::Infallible, env, net::SocketAddr};
+use std::{env, net::SocketAddr, path::PathBuf};
 
 use anyhow::Context;
-use serde::Serialize;
-use sqlx::{PgPool, postgres::PgPoolOptions};
+use sqlx::postgres::PgPoolOptions;
+use storykeep_backend::AppState;
 use tracing_subscriber::EnvFilter;
-use warp::{Filter, http::StatusCode, reply::Reply};
-
-#[derive(Serialize)]
-struct Health {
-	status: &'static str,
-	database: &'static str,
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -23,20 +16,25 @@ async fn main() -> anyhow::Result<()> {
 		.unwrap_or_else(|_| "127.0.0.1:3000".into())
 		.parse()
 		.context("BIND_ADDR is not a valid socket address")?;
+	let media_dir = PathBuf::from(env::var("MEDIA_DIR").unwrap_or_else(|_| "media".into()));
 
-	let pool = PgPoolOptions::new()
+	let db = PgPoolOptions::new()
 		.max_connections(10)
 		.connect(&database_url)
 		.await
 		.context("failed to connect to the database")?;
 
 	sqlx::migrate!()
-		.run(&pool)
+		.run(&db)
 		.await
 		.context("failed to run database migrations")?;
 
+	tokio::fs::create_dir_all(&media_dir)
+		.await
+		.with_context(|| format!("failed to create media directory {}", media_dir.display()))?;
+
 	tracing::info!("listening on http://{addr}");
-	warp::serve(routes(pool))
+	warp::serve(storykeep_backend::app(AppState { db, media_dir }))
 		.bind(addr)
 		.await
 		.graceful(shutdown_signal())
@@ -44,42 +42,6 @@ async fn main() -> anyhow::Result<()> {
 		.await;
 
 	Ok(())
-}
-
-fn routes(pool: PgPool) -> impl Filter<Extract = (impl Reply,), Error = warp::Rejection> + Clone {
-	let health = warp::path!("health")
-		.and(warp::get())
-		.and(with_pool(pool))
-		.and_then(health);
-
-	health.with(warp::trace::request())
-}
-
-fn with_pool(pool: PgPool) -> impl Filter<Extract = (PgPool,), Error = Infallible> + Clone {
-	warp::any().map(move || pool.clone())
-}
-
-async fn health(pool: PgPool) -> Result<impl Reply, Infallible> {
-	let (code, body) = match sqlx::query("SELECT 1").execute(&pool).await {
-		Ok(_) => (
-			StatusCode::OK,
-			Health {
-				status: "ok",
-				database: "ok",
-			},
-		),
-		Err(err) => {
-			tracing::error!("database health check failed: {err}");
-			(
-				StatusCode::SERVICE_UNAVAILABLE,
-				Health {
-					status: "degraded",
-					database: "unavailable",
-				},
-			)
-		}
-	};
-	Ok(warp::reply::with_status(warp::reply::json(&body), code))
 }
 
 async fn shutdown_signal() {
