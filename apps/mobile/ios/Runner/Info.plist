@@ -66,5 +66,17 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Storykeep lets you attach photos and videos from your library to memories and time capsules.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Storykeep lets you take photos and videos to attach to memories and time capsules.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Storykeep records sound when you capture a video for a memory or time capsule.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Allows plain HTTP to local development servers only (local hostnames and IPs). -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
